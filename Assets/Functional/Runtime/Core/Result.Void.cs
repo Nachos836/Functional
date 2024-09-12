@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 using static System.Runtime.CompilerServices.MethodImplOptions;
 
-namespace Functional
+namespace Functional.Core
 {
     using Outcome;
 
@@ -117,18 +117,6 @@ namespace Functional
             };
         }
 
-        [Pure]
-        [MethodImpl(AggressiveInlining)]
-        public TMatch Match<TMatch>(Func<TMatch> success, Func<Exception, TMatch> error)
-        {
-            return _income switch
-            {
-                Exception => error.Invoke(_exception),
-                Succeed => success.Invoke(),
-                _ => error.Invoke(Unexpected.Impossible)
-            };
-        }
-
         [MethodImpl(AggressiveInlining)]
         public void Match(Action success, Action<Exception> error)
         {
@@ -144,6 +132,18 @@ namespace Functional
                     error.Invoke(Unexpected.Impossible);
                     return;
             }
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public TMatch Match<TMatch>(Func<TMatch> success, Func<Exception, TMatch> error)
+        {
+            return _income switch
+            {
+                Exception => error.Invoke(_exception),
+                Succeed => success.Invoke(),
+                _ => error.Invoke(Unexpected.Impossible)
+            };
         }
 
         [Pure]

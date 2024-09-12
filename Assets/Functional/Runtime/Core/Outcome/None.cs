@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Functional.Outcome
+namespace Functional.Core.Outcome
 {
     [StructLayout(LayoutKind.Sequential, Size = 1)]
-    public readonly struct Success { }
+    public readonly struct None { }
 }

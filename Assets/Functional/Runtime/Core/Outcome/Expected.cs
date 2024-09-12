@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 
-namespace Functional.Outcome
+namespace Functional.Core.Outcome
 {
     public static class Expected
     {
