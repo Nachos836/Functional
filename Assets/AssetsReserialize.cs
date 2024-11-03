@@ -1,10 +1,13 @@
 ﻿using UnityEditor;
 
-internal static class AssetsReserialize
+namespace Functional
 {
-    [MenuItem("Build/Force Reserialize Assets")]
-    private static void ForceReserializeAssets()
+    internal static class AssetsReserialize
     {
-        AssetDatabase.ForceReserializeAssets();
+        [MenuItem("Tools/Force Reserialize Assets")]
+        private static void ForceReserializeAssets()
+        {
+            AssetDatabase.ForceReserializeAssets();
+        }
     }
 }

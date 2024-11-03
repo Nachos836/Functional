@@ -64,6 +64,19 @@ namespace Functional.Async
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
+        public AsyncRichResult AsRichResult()
+        {
+            return _income switch
+            {
+                Succeed => AsyncRichResult.Success,
+                Canceled => AsyncRichResult.Cancel,
+                Exception => AsyncRichResult.Error,
+                _ => AsyncRichResult.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
         public AsyncResult<TAnother> Attach<TAnother>(TAnother another)
         {
             return _income switch
