@@ -19,10 +19,10 @@ namespace Functional.Async
         private readonly Exception _exception;
 
         [MethodImpl(AggressiveInlining)]
-        private AsyncResult(Exception exception)
+        private AsyncResult(Success _)
         {
-            _income = Exception;
-            _exception = exception;
+            _income = Succeed;
+            _exception = default!;
         }
 
         [MethodImpl(AggressiveInlining)]
@@ -33,10 +33,10 @@ namespace Functional.Async
         }
 
         [MethodImpl(AggressiveInlining)]
-        private AsyncResult(Success _)
+        private AsyncResult(Exception exception)
         {
-            _income = Succeed;
-            _exception = default!;
+            _income = Exception;
+            _exception = exception;
         }
 
         [Pure] public static AsyncResult Success { get; } = new (Expected.Success);

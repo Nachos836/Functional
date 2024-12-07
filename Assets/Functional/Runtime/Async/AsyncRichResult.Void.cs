@@ -37,7 +37,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         private AsyncRichResult(Expected.Failure failure)
         {
-            _income = Canceled;
+            _income = Failed;
             _failure = failure!;
             _exception = default!;
         }
@@ -45,7 +45,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         private AsyncRichResult(Exception exception)
         {
-            _income = Canceled;
+            _income = Exception;
             _failure = default!;
             _exception = exception;
         }
