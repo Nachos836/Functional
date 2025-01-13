@@ -36,8 +36,8 @@ namespace Functional.Core
             _exception = exception;
         }
 
-        [Pure] public static Result<TValue> Error { get; } = new (Unexpected.Error);
-        [Pure] public static Result<TValue> Impossible { get; } = new (Unexpected.Impossible);
+        [Pure] public static Result<TValue> Error { [MethodImpl(AggressiveInlining)] get; } = new (Unexpected.Error);
+        [Pure] public static Result<TValue> Impossible { [MethodImpl(AggressiveInlining)] get; } = new (Unexpected.Impossible);
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
@@ -105,7 +105,7 @@ namespace Functional.Core
         }
 
         [MethodImpl(AggressiveInlining)]
-        public void Run(Action<TValue?> action)
+        public void Run(Action<TValue> action)
         {
             if (_income == Value)
             {
@@ -115,7 +115,7 @@ namespace Functional.Core
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public Result Run(Func<TValue?, Result> action)
+        public Result Run(Func<TValue, Result> action)
         {
             return _income switch
             {
@@ -127,7 +127,7 @@ namespace Functional.Core
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public Result<TAnother> Run<TAnother>(Func<TValue?, Result<TAnother>> action)
+        public Result<TAnother> Run<TAnother>(Func<TValue, Result<TAnother>> action)
         {
             return _income switch
             {
@@ -138,7 +138,7 @@ namespace Functional.Core
         }
 
         [MethodImpl(AggressiveInlining)]
-        public void Match(Action<TValue?> success, Action<Exception> error)
+        public void Match(Action<TValue> success, Action<Exception> error)
         {
             switch (_income)
             {
@@ -225,7 +225,7 @@ namespace Functional.Core
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static (TFirst?, TSecond?) FromValue(TFirst first, TSecond second) => (first, second);
+        public static (TFirst, TSecond) FromValue(TFirst first, TSecond second) => (first, second);
         [Pure]
         [MethodImpl(AggressiveInlining)]
         public static Result<TFirst, TSecond> FromException(Exception exception) => exception;
@@ -348,6 +348,216 @@ namespace Functional.Core
             {
                 Exception => _exception.Message,
                 Value => $"{ _value.First } { _value.Second }",
+                _ => Unexpected.Impossible.Message
+            };
+        }
+    }
+
+    public readonly struct Result<TFirst, TSecond, TThird>
+    {
+        private readonly ResultValueIncomeSource _income;
+        private readonly (TFirst First, TSecond Second, TThird Third) _value;
+        private readonly Exception _exception;
+
+        [MethodImpl(AggressiveInlining)]
+        private Result(TFirst first, TSecond second, TThird third)
+        {
+            _income = Value;
+            _value = (first, second, third);
+            _exception = default!;
+        }
+
+        [MethodImpl(AggressiveInlining)]
+        private Result(Exception exception)
+        {
+            _income = Exception;
+            _value = default;
+            _exception = exception;
+        }
+
+        [Pure] public static Result<TFirst, TSecond, TThird> Error { [MethodImpl(AggressiveInlining)] get; } = new (Unexpected.Error);
+        [Pure] public static Result<TFirst, TSecond, TThird> Impossible { [MethodImpl(AggressiveInlining)] get; } = new (Unexpected.Impossible);
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public static implicit operator Result<TFirst, TSecond, TThird> ((TFirst First, TSecond Second, TThird Third) income) => new (income.First, income.Second, income.Third);
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public static implicit operator Result<TFirst, TSecond, TThird> (Exception exception) => new (exception);
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public static (TFirst, TSecond, TThird) FromValue(TFirst first, TSecond second, TThird third) => (first, second, third);
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public static Result<TFirst, TSecond, TThird> FromException(Exception exception) => exception;
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TFirst> Reduce(Func<TFirst, TSecond, TThird, TFirst> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TSecond> Reduce(Func<TFirst, TSecond, TThird, TSecond> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TThird> Reduce(Func<TFirst, TSecond, TThird, TThird> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TFirst, TSecond> Reduce(Func<TFirst, TSecond, TThird, (TFirst, TSecond)> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TFirst, TThird> Reduce(Func<TFirst, TSecond, TThird, (TFirst, TThird)> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TSecond, TThird> Reduce(Func<TFirst, TSecond, TThird, (TSecond, TThird)> reducer)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => reducer.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [MethodImpl(AggressiveInlining)]
+        public void Run(Action<TFirst, TSecond, TThird> action)
+        {
+            if (_income == Value)
+            {
+                action.Invoke(_value.First, _value.Second, _value.Third);
+            }
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TAnother> Run<TAnother>(Func<TFirst, TSecond, TThird, Result<TAnother>> action)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => action.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public RichResult<TAnother> Run<TAnother>(Func<TFirst, TSecond, TThird, RichResult<TAnother>> action)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => action.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public Result<TAnother, TAnotherOne> Run<TAnother, TAnotherOne>(Func<TFirst, TSecond, TThird, Result<TAnother, TAnotherOne>> action)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => action.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public RichResult<TAnother, TAnotherOne> Run<TAnother, TAnotherOne>(Func<TFirst, TSecond, TThird, RichResult<TAnother, TAnotherOne>> action)
+        {
+            return _income switch
+            {
+                Exception => _exception,
+                Value => action.Invoke(_value.First, _value.Second, _value.Third),
+                _ => Unexpected.Impossible
+            };
+        }
+
+        [MethodImpl(AggressiveInlining)]
+        public void Match(Action<TFirst, TSecond, TThird> success, Action<Exception> error)
+        {
+            switch (_income)
+            {
+                case Exception:
+                    success.Invoke(_value.First, _value.Second, _value.Third);
+                    return;
+                case Value:
+                    error.Invoke(_exception);
+                    return;
+                default:
+                    error.Invoke(Unexpected.Impossible);
+                    return;
+            }
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public TMatch Match<TMatch>(Func<TFirst, TSecond, TThird, TMatch> success, Func<Exception, TMatch> error)
+        {
+            return _income switch
+            {
+                Exception => error.Invoke(_exception),
+                Value => success.Invoke(_value.First, _value.Second, _value.Third),
+                _ => error.Invoke(Unexpected.Impossible)
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public override string ToString()
+        {
+            return _income switch
+            {
+                Exception => _exception.Message,
+                Value => $"{ _value.First } { _value.Second } { _value.Third }",
                 _ => Unexpected.Impossible.Message
             };
         }
