@@ -80,6 +80,9 @@ namespace Functional.Async
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
+        public static AsyncRichResult<TValue> FromResult(TValue value) => value;
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
         public static AsyncRichResult<TValue> FromCancellation(CancellationToken cancellation) => cancellation;
         [Pure]
         [MethodImpl(AggressiveInlining)]
