@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -10,18 +10,20 @@ namespace Functional.Async
 {
     using Core.Outcome;
 
-    using static AsyncRichResultVoidIncomeSource;
+    using static AsyncRichResultValueIncomeSource;
 
-    public readonly struct AsyncRichResult
+    public readonly struct AsyncRichResult<TValue>
     {
-        private readonly AsyncRichResultVoidIncomeSource _income;
+        private readonly AsyncRichResultValueIncomeSource _income;
+        private readonly TValue _value;
         private readonly Expected.Failure _failure;
         private readonly Exception _exception;
 
         [MethodImpl(AggressiveInlining)]
-        private AsyncRichResult(Success _)
+        private AsyncRichResult(TValue value)
         {
-            _income = Succeed;
+            _income = Value;
+            _value = value;
             _failure = default!;
             _exception = default!;
         }
@@ -30,6 +32,7 @@ namespace Functional.Async
         private AsyncRichResult(CancellationToken _)
         {
             _income = Canceled;
+            _value = default!;
             _failure = default!;
             _exception = default!;
         }
@@ -38,7 +41,8 @@ namespace Functional.Async
         private AsyncRichResult(Expected.Failure failure)
         {
             _income = Failed;
-            _failure = failure!;
+            _value = default!;
+            _failure = failure;
             _exception = default!;
         }
 
@@ -46,103 +50,85 @@ namespace Functional.Async
         private AsyncRichResult(Exception exception)
         {
             _income = Exception;
+            _value = default!;
             _failure = default!;
             _exception = exception;
         }
 
-        [Pure] public static AsyncRichResult Success { get; } = new (Expected.Success);
-        [Pure] public static AsyncRichResult Cancel { get; } = new (CancellationToken.None);
-        [Pure] public static AsyncRichResult Failure { get; } = new (Expected.Failed);
-        [Pure] public static AsyncRichResult Error { get; } = new (Unexpected.Error);
-        [Pure] public static AsyncRichResult Impossible { get; } = new (Unexpected.Impossible);
+        [Pure] public static AsyncRichResult<TValue> Cancel { get; } = new (CancellationToken.None);
+        [Pure] public static AsyncRichResult<TValue> Failure { get; } = new (Expected.Failed);
+        [Pure] public static AsyncRichResult<TValue> Error { get; } = new (Unexpected.Error);
+        [Pure] public static AsyncRichResult<TValue> Impossible { get; } = new (Unexpected.Impossible);
 
-        [Pure] public bool IsSuccessful => _income == Succeed;
+        [Pure] public bool HasValue => _income == Value;
         [Pure] public bool IsCancellation => _income == Canceled;
         [Pure] public bool IsFailure => _income == Failed;
-        [Pure] public bool IsError => _income != Succeed && _income != Canceled && _income != Failed;
+        [Pure] public bool IsError => (_income & (Value | Canceled | Failed)) != 0;
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static implicit operator AsyncRichResult (CancellationToken cancellation) => new (cancellation);
+        public static implicit operator AsyncRichResult<TValue> (CancellationToken cancellation) => new (cancellation);
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static implicit operator AsyncRichResult (Expected.Failure failure) => new (failure);
+        public static implicit operator AsyncRichResult<TValue> (Expected.Failure failure) => new (failure);
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static implicit operator AsyncRichResult (Exception error) => new (error);
+        public static implicit operator AsyncRichResult<TValue> (Exception error) => new (error);
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static AsyncRichResult FromCancellation(CancellationToken cancellation) => cancellation;
+        public static AsyncRichResult<TValue> FromCancellation(CancellationToken cancellation) => cancellation;
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static AsyncRichResult FromFailure(Expected.Failure failure) => failure;
+        public static AsyncRichResult<TValue> FromFailure(Expected.Failure failure) => failure;
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public static AsyncRichResult FromException(Exception exception) => exception;
+        public static AsyncRichResult<TValue> FromException(Exception exception) => exception;
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public AsyncResult AsAsyncResult()
+        public AsyncResult<TValue> AsAsyncResult()
         {
             return _income switch
             {
                 Exception => _exception,
                 Failed => _failure.AsException(),
-                Canceled => AsyncResult.Cancel,
-                Succeed => AsyncResult.Success,
-                _ => AsyncResult.Impossible
+                Canceled => AsyncResult<TValue>.Cancel,
+                Value => AsyncResult<TValue>.FromResult(_value),
+                _ => AsyncResult<TValue>.Impossible
             };
         }
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public AsyncRichResult Combine(AsyncRichResult another)
+        public AsyncRichResult AsAsyncRichResult()
         {
-            return (_income, another._income) switch
+            return _income switch
             {
-                (Exception, Exception) => new AggregateException(_exception, another._exception),
-                (Exception, _) => _exception,
-                (_, Exception) => another._exception,
-                (Failed, _) => _failure,
-                (_, Failed) => another._failure,
-                (Canceled, Canceled) => Cancel,
-                (Canceled, Succeed) => Cancel,
-                (Succeed, Canceled) => Cancel,
-                (Succeed, Succeed) => this,
-                _ => Impossible
+                Exception => _exception,
+                Failed => _failure,
+                Canceled => AsyncRichResult.Cancel,
+                Value => AsyncRichResult.Success,
+                _ => AsyncRichResult.Impossible
             };
         }
 
         [Pure]
         [MethodImpl(AggressiveInlining)]
-        public AsyncRichResult Run(Action action)
+        public AsyncRichResult<TValue> Run(Action<TValue> action)
         {
-            if (IsSuccessful)
+            if (HasValue)
             {
-                action.Invoke();
+                action.Invoke(_value);
             }
 
             return this;
         }
 
-        [Pure]
-        [MethodImpl(AggressiveInlining)]
-        public AsyncRichResult Run(Func<AsyncRichResult> action)
-        {
-            return _income switch
-            {
-                Exception => _exception,
-                Canceled => Cancel,
-                Succeed => action.Invoke(),
-                _ => Impossible
-            };
-        }
-
         [MethodImpl(AggressiveInlining)]
         public void Match
         (
-            Action<CancellationToken> success,
+            Action<TValue, CancellationToken> success,
             Action cancellation,
             Action<Expected.Failure> failure,
             Action<Exception> error,
@@ -159,8 +145,8 @@ namespace Functional.Async
                 case Canceled:
                     cancellation.Invoke();
                     return;
-                case Succeed:
-                    success.Invoke(token);
+                case Value:
+                    success.Invoke(_value, token);
                     return;
                 default:
                     error.Invoke(Unexpected.Impossible);
@@ -172,7 +158,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         public TMatch Match<TMatch>
         (
-            Func<CancellationToken, TMatch> success,
+            Func<TValue, CancellationToken, TMatch> success,
             Func<TMatch> cancellation,
             Func< Expected.Failure, TMatch> failure,
             Func<Exception, TMatch> error,
@@ -183,7 +169,7 @@ namespace Functional.Async
                 Exception => error.Invoke(_exception),
                 Failed => failure.Invoke(_failure),
                 Canceled => cancellation.Invoke(),
-                Succeed => success.Invoke(token),
+                Value => success.Invoke(_value, token),
                 _ => error.Invoke(Unexpected.Impossible)
             };
         }
@@ -192,7 +178,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         public UniTask MatchAsync
         (
-            Func<CancellationToken, UniTask> success,
+            Func<TValue, CancellationToken, UniTask> success,
             Func<UniTask> cancellation,
             Func<Expected.Failure, UniTask> failure,
             Func<Exception, UniTask> error,
@@ -203,7 +189,7 @@ namespace Functional.Async
                 Exception => error.Invoke(_exception),
                 Failed => failure.Invoke(_failure),
                 Canceled => cancellation.Invoke(),
-                Succeed => success.Invoke(token),
+                Value => success.Invoke(_value, token),
                 _ => error.Invoke(Unexpected.Impossible)
             };
         }
@@ -212,7 +198,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         public UniTask MatchAsync
         (
-            Func<CancellationToken, UniTask> success,
+            Func<TValue, CancellationToken, UniTask> success,
             Func<CancellationToken, UniTask> cancellation,
             Func<Expected.Failure, CancellationToken, UniTask> failure,
             Func<Exception, CancellationToken, UniTask> error,
@@ -223,7 +209,7 @@ namespace Functional.Async
                 Exception => error.Invoke(_exception, token),
                 Failed => failure.Invoke(_failure, token),
                 Canceled => cancellation.Invoke(token),
-                Succeed => success.Invoke(token),
+                Value => success.Invoke(_value, token),
                 _ => error.Invoke(Unexpected.Impossible, token)
             };
         }
@@ -232,7 +218,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         public UniTask<TMatch> MatchAsync<TMatch>
         (
-            Func<CancellationToken, UniTask<TMatch>> success,
+            Func<TValue, CancellationToken, UniTask<TMatch>> success,
             Func<UniTask<TMatch>> cancellation,
             Func<Expected.Failure, UniTask<TMatch>> failure,
             Func<Exception, UniTask<TMatch>> error,
@@ -243,7 +229,7 @@ namespace Functional.Async
                 Exception => error.Invoke(_exception),
                 Failed => failure.Invoke(_failure),
                 Canceled => cancellation.Invoke(),
-                Succeed => success.Invoke(token),
+                Value => success.Invoke(_value, token),
                 _ => error.Invoke(Unexpected.Impossible)
             };
         }
@@ -252,7 +238,7 @@ namespace Functional.Async
         [MethodImpl(AggressiveInlining)]
         public UniTask<TMatch> MatchAsync<TMatch>
         (
-            Func<CancellationToken, UniTask<TMatch>> success,
+            Func<TValue, CancellationToken, UniTask<TMatch>> success,
             Func<CancellationToken, UniTask<TMatch>> cancellation,
             Func<Expected.Failure, CancellationToken, UniTask<TMatch>> failure,
             Func<Exception, CancellationToken, UniTask<TMatch>> error,
@@ -263,16 +249,16 @@ namespace Functional.Async
                 Exception => error.Invoke(_exception, token),
                 Failed => failure.Invoke(_failure, token),
                 Canceled => cancellation.Invoke(token),
-                Succeed => success.Invoke(token),
+                Value => success.Invoke(_value, token),
                 _ => error.Invoke(Unexpected.Impossible, token)
             };
         }
     }
 
     [Flags]
-    internal enum AsyncRichResultVoidIncomeSource
+    internal enum AsyncRichResultValueIncomeSource
     {
-        Succeed = 1 << 0,
+        Value = 1 << 0,
         Canceled = 1 << 1,
         Failed = 1 << 2,
         Exception = 1 << 3

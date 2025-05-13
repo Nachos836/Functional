@@ -868,8 +868,8 @@ namespace Functional.Async
 
     internal enum AsyncResultValueIncomeSource
     {
-        Value = 1,
-        Canceled = 2,
-        Exception = 3
+        Value = 1 << 0,
+        Canceled = 1 << 1,
+        Exception = 1 << 2
     }
 }
