@@ -1,7 +1,7 @@
 {
 	"name": "com.nachos836.functional",
 	"displayName": "Unity (FP) Functional",
-	"version": "0.5.2",
+	"version": "0.5.3",
 	"unity": "2022.3",
 	"description": "Functional Programming Patterns suitable for Unity",
 	"keywords": ["FP", "Functional Programming", "Discriminated Union", "Result Type"],
@@ -20,7 +20,8 @@
 		"revision": "master"
 	},
 	"dependencies": {
-		"com.cysharp.unitask": "2.5.10"
+		"com.cysharp.unitask": "2.5.10",
+        "com.nachos836.dot-net-compat" : "https://github.com/Nachos836/Generic.git?path=Assets/dotNetCompat"
 	},
 	"scopedRegistries": [
 		{

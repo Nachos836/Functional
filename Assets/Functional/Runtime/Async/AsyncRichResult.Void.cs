@@ -146,10 +146,28 @@ namespace Functional.Async
         {
             return _income switch
             {
-                Exception => _exception,
-                Canceled => Cancel,
+                Exception => this,
+                Canceled => this,
                 Succeed => action.Invoke(),
+                Failed => this,
                 _ => Impossible
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public UniTask<AsyncRichResult> RunAsync
+        (
+            Func<CancellationToken, UniTask<AsyncRichResult>> action,
+            CancellationToken cancellation = default
+        ) {
+            return _income switch
+            {
+                Exception => UniTask.FromResult(this),
+                Canceled => UniTask.FromResult(this),
+                Succeed => action.Invoke(cancellation),
+                Failed => UniTask.FromResult(this),
+                _ => UniTask.FromResult(Impossible)
             };
         }
 

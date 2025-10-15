@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 
 using static System.Runtime.CompilerServices.MethodImplOptions;
 
@@ -146,10 +147,26 @@ namespace Functional.Async
         {
             return _income switch
             {
-                Exception => _exception,
-                Canceled => Cancel,
+                Exception => this,
+                Canceled => this,
                 Succeed => action.Invoke(),
-                _ => Impossible
+                _ => this
+            };
+        }
+
+        [Pure]
+        [MethodImpl(AggressiveInlining)]
+        public UniTask<AsyncResult> RunAsync
+        (
+            Func<CancellationToken, UniTask<AsyncResult>> action,
+            CancellationToken cancellation = default
+        ) {
+            return _income switch
+            {
+                Exception => UniTask.FromResult(this),
+                Canceled => UniTask.FromResult(this),
+                Succeed => action.Invoke(cancellation),
+                _ => UniTask.FromResult(this)
             };
         }
 

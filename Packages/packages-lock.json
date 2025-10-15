@@ -7,12 +7,21 @@
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
+    "com.nachos836.dot-net-compat": {
+      "version": "https://github.com/Nachos836/Generic.git?path=Assets/dotNetCompat",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "org.nuget.system.runtime.compilerservices.unsafe": "6.1.2"
+      },
+      "hash": "7fbdc745e8782156d45a198d90c573ee364f55d0"
+    },
     "com.nachos836.editor-utils": {
       "version": "https://github.com/Nachos836/Generic.git?path=Assets/EditorUtils",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "da17c05f8a7b24f96b9afceb96100ea321693a2f"
+      "hash": "7fbdc745e8782156d45a198d90c573ee364f55d0"
     },
     "com.unity.ext.nunit": {
       "version": "2.0.5",
@@ -21,7 +30,7 @@
       "dependencies": {}
     },
     "com.unity.ide.rider": {
-      "version": "3.0.36",
+      "version": "3.0.38",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -30,16 +39,16 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.23",
+      "version": "2.0.25",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.test-framework": "1.1.9"
+        "com.unity.test-framework": "1.1.31"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.5.1",
+      "version": "1.6.0",
       "depth": 0,
       "source": "builtin",
       "dependencies": {
@@ -47,6 +56,13 @@
         "com.unity.modules.imgui": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
       }
+    },
+    "org.nuget.system.runtime.compilerservices.unsafe": {
+      "version": "6.1.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
     },
     "com.unity.modules.imgui": {
       "version": "1.0.0",
